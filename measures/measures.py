@@ -144,11 +144,12 @@ def calculate_measurements(model, device, tr_acc, matrix_loader, training_loader
     if sigma is None:
         sigma = sharpness_sigma(model, training_loader, tr_acc, d)
 
+
+    nparam = calc_measure(model, model, n_param, 'sum', {})
     alpha = sigma * math.sqrt(2*math.log((2*nparam) / d))
     print(sigma)
     print(alpha)
 
-    nparam = calc_measure(model, model, n_param, 'sum', {})
 
     log_prod_sum = math.log1p(compute_log_prod_sum(model, device))
     log_prod_spec = math.log1p(compute_log_prod_spec(model, device))
