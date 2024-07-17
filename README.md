@@ -5,7 +5,7 @@
 
 ## Installation
 
-This framework has been tested on Ubuntu 20.04, with Python 3.9, Pytorch 1.11.0, cudatoolkit 10.2, torchvision 0.12.0, scipy 1.13.1,
+This framework has been tested on Ubuntu 20.04, with Python 3.9, Pytorch 1.11.0, cudatoolkit 10.2, torchvision 0.12.0, scipy 1.13.1.
 
 I recommend to setup a new conda environment, with the given packages:
 
@@ -34,7 +34,7 @@ The main file is `train.py`, that trains several models and perform measurements
 ### Arguments
 To control the experiment, you provide arguments to the file. Here is the list:
 
-```bash
+```
 --name		Name of the experiment. Default is the list of varying hyperparameters
 
 --seed		Seed of the experiment. Default is random
@@ -68,14 +68,14 @@ To control the experiment, you provide arguments to the file. Here is the list:
 ### Hyperparameters
 
 The following arguments are the main hyperparameters, that will define the experiment. By setting the argument to a negative value, the hyperparameter will cycle between a selection of values, specified in the csv files from the `csv` folder, with one unique value for each of the models of the experiment. Fixing the value will fix it for all the models.
-```bash
+```
 --learning-rate	Learning rate of the training procedure. Default is -1
 ```
 
 ### FCNN-only hyperparameters
 
 The following arguments have a meaning only when training FC neural networks, i.e. when `--model` is `fc`. 
-```bash
+```
 --depth	Specifies the number of hidden layers in the NN. Default is -1
 --width	Specifies the number of neurons in each hidden layer. Default is -1
 --dropout	Specifies the dropout rate applied to the hidden layers. Default is -1
