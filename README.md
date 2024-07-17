@@ -12,22 +12,22 @@ I recommend to setup a new conda environment, with the given packages:
 1. Ideally, create a new conda environment with Python, Pytorch, TorchVision and matplotlib.
 - If using the GPU:
 ```bash
-conda create -n generalization-bounds python==3.9 pytorch==1.11.0 torchvision==0.12.0 cudatoolkit=10.2 matplotlib -c pytorch
+conda create -n generalization-measures python==3.9 pytorch==1.11.0 torchvision==0.12.0 cudatoolkit=10.2 matplotlib -c pytorch
 ```
 
 - If using only the CPU:
 ```bash
-conda create -n generalization-bounds python==3.9 pytorch==1.11.0 torchvision==0.12.0 cpuonly matplotlib -c pytorch
+conda create -n generalization-measures python==3.9 pytorch==1.11.0 torchvision==0.12.0 cpuonly matplotlib -c pytorch
 ```
-
-2. Install `scipy` using pip:
+2. Activate the conda environment, and install `scipy` using `pip`
 ```bash
+conda activate generalization-measures
 pip install scipy
 ```
 
 3. Clone the repository:
 ```bash
-git clone https://github.com/valentinRieu/generalization-bounds
+git clone https://github.com/valentinRieu/aml-gen-measures-ntk
 ```
 
 
@@ -35,7 +35,7 @@ git clone https://github.com/valentinRieu/generalization-bounds
 ## Training
 4. Print the help of the training function:
 ```bash
-python3 train --help
+python3 train.py --help
 ```
 This will print the instructions
 
@@ -102,7 +102,7 @@ python3 train.py --model fc --name simple_training --dataset MNIST --n-nn 4 --ep
 
 ## Evaluation
 
-In current version, plotting and evaluation of the measures are done in the same process. Next version will provide a separate file for pltotting and evaluation.
+In the current version, plotting and evaluation of the measures are done in the same process. Next version will provide a separate file for pltotting and evaluation.
 
 ## Extension
 
