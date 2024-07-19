@@ -252,7 +252,7 @@ def main():
             save_gradient = (epoch >= args.save_every)
             if save_gradient:
                 print('Computing measurements at epoch', epoch)
-                dict_meas, new_matrix_0, new_std_0, new_sigma = calculate_measurements(model, device, tr_acc, matrix_loader, train_loader, n_images_matrix, criterion, n_train, args, matrix_0=matrix_0, std_0=std_0, sigma=sigma)
+                dict_meas, new_matrix_0, new_std_0, new_sigma = calculate_measurements(model, device, nchannels, img_dim, val_margin, tr_acc, matrix_loader, train_loader, n_images_matrix, criterion, n_train, args, matrix_0=matrix_0, std_0=std_0, sigma=sigma)
                 sigma = new_sigma
                 std_0 = new_std_0 
                 matrix_0 = copy.deepcopy(new_matrix_0)

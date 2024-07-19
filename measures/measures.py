@@ -136,7 +136,7 @@ def pacbayes_bound(reference_vec: Tensor, m, sigma) -> Tensor:
 
 
 
-def calculate_measurements(model, device, tr_acc, matrix_loader, training_loader, n_images_matrix, criterion, n_train, args, matrix_0 = None, std_0 = None, sigma = None):
+def calculate_measurements(model, device, nchannels, img_dim, margin, tr_acc, matrix_loader, training_loader, n_images_matrix, criterion, n_train, args, matrix_0 = None, std_0 = None, sigma = None):
     
     y_matrix = get_targets(device, matrix_loader, n_images_matrix)
 
@@ -169,6 +169,19 @@ def calculate_measurements(model, device, tr_acc, matrix_loader, training_loader
     k_diff = math.log1p(relative_matrix_diff(matrix, matrix_0).item())
     k_lga = math.log1p(matrix_lga(matrix, y_matrix).item())
 
+    # From Neyshabur et al. 2018, adapted to fit the task:
+
+    with torch.no_grad():
+        L_1_inf_norm = calc_measure(model, model, norm, 'product', {'p':1, 'q':float('Inf')}) / margin
+        Frobenious_norm = calc_measure(model, model, norm, 'product', {'p':2, 'q':2}) / margin
+        L_3_1_5_norm = calc_measure(model, model, norm, 'product', {'p':3, 'q':1.5}) / margin
+        Spectral_norm = calc_measure(model, model, op_norm, 'product', {'p':float('Inf')}) / margin
+        L_1_5_operator_norm = calc_measure(model, model, op_norm, 'product', {'p':1.5}) / margin
+        Trace_norm = calc_measure(model, model, op_norm, 'product', {'p':1}) / margin
+        L1_path_norm = lp_path_norm(model, device, p=1, input_size=[1, nchannels, img_dim, img_dim]) / margin
+        L1_5_path_norm = lp_path_norm(model, device, p=1.5, input_size=[1, nchannels, img_dim, img_dim]) / margin
+        L2_path_norm = lp_path_norm(model, device, p=2, input_size=[1, nchannels, img_dim, img_dim]) / margin
+
     return {
         'log_prod_sum': log_prod_sum,
         'log_prod_spec': log_prod_spec,
@@ -183,93 +196,6 @@ def calculate_measurements(model, device, tr_acc, matrix_loader, training_loader
         'k_lga': k_lga
     }, matrix_0, std_0, sigma
 
-
-def calculate(init_model, device, n, margin, learning_rate, init_mat, targets, nchannels, nclasses, img_dim):
-
-
-    init_matrix = copy.deepcopy(init_mat)
-    reparam(init_model)
-
-    theta_0 = get_weights_only(init_model)
-    print(type(theta_0))
-    d = 0.01
-    sigma_max = 2.0
-    sigma_min = 1.0
-    M1 = 10
-    M2 = 10
-    M3 = 10
-    eps_d = 0.01
-    eps_sigma = 0.01
-
-    # sigma = sigma_pac_bayes(model, theta_0, l, d, sigma_max, sigma_min, M1, M2, M3, eps_d, eps_sigma, D, device, nclasses)
-    sigma = 1
-    print(sigma)
-    seed = 42
-
-    # depth
-    d = calc_measure(init_model, init_model, depth, 'sum', {})
-
-    # number of parameters (not including batch norm)
-    nparam = calc_measure(init_model, init_model, n_param, 'sum', {})
-
-
-    measure, bound = {}, {}
-    with torch.no_grad():
-
-        measure['log prod sum']
-        measure['L_{1,inf} norm'] = calc_measure(init_model, init_model, norm, 'product', {'p':1, 'q':float('Inf')}) / margin
-        measure['Frobenious norm'] = calc_measure(init_model, init_model, norm, 'product', {'p':2, 'q':2}) / margin
-        measure['L_{3,1.5} norm'] = calc_measure(init_model, init_model, norm, 'product', {'p':3, 'q':1.5}) / margin
-        measure['Spectral norm'] = calc_measure(init_model, init_model, op_norm, 'product', {'p':float('Inf')}) / margin
-        measure['L_1.5 operator norm'] = calc_measure(init_model, init_model, op_norm, 'product', {'p':1.5}) / margin
-        measure['Trace norm'] = calc_measure(init_model, init_model, op_norm, 'product', {'p':1}) / margin
-        measure['L1_path norm'] = lp_path_norm(init_model, device, p=1, input_size=[1, nchannels, img_dim, img_dim]) / margin
-        measure['L1.5_path norm'] = lp_path_norm(init_model, device, p=1.5, input_size=[1, nchannels, img_dim, img_dim]) / margin
-        measure['L2_path norm'] = lp_path_norm(init_model, device, p=2, input_size=[1, nchannels, img_dim, img_dim]) / margin
-
-        measure['mu_1 norm'] = 1 / margin
-        failure_proba = 0.01
-        alpha = sigma * math.sqrt(2*math.log((2*nparam) / d))
-        weights = get_weights_only(init_model)
-        dist_init_weights = [p-q for p,q in zip(weights, get_weights_only(init_model))]
-        w_vec = get_vec_params(weights)
-        dist_w_vec = get_vec_params(dist_init_weights)
-        d = len(weights)
-
-        # sharpness measures and bounds
-        
-        measure['Flatness Init'] = pacbayes_bound(dist_w_vec, n, sigma)
-        measure['Flatness Orig'] = pacbayes_bound(w_vec, n, sigma)
-        measure['Sharpness Init'] = ((calc_measure(init_model, init_model, norm, 'sum', p = 2) * math.log(2*nparam)) / (4 * alpha**2)) + math.log(n / sigma) + 10
-        measure['Sharpness Orig'] = ((lp_path_norm(init_model, device, p = 3, input_size=[1, nchannels, img_dim, img_dim]) * math.log(2*nparam)) / (2 * alpha**2)) + math.log(n / d) + 10
-
-
-
-
-        bound['L1_max Bound (Bartlett and Mendelson 2002)'] = alpha * measure['L_{1,inf} norm'] / math.sqrt(n)
-        bound['Frobenious Bound (Neyshabur et al. 2015)'] = alpha * measure['Frobenious norm'] / math.sqrt(n)
-        bound['L_{3,1.5} Bound (Neyshabur et al. 2015)'] = alpha * measure['L_{3,1.5} norm'] / ( n ** (1/3))
-
-        beta = math.log(n) * math.log(nparam)
-        ratio = calc_measure(init_model, init_model, h_dist_op_norm,'norm', {'p':2, 'q':1, 'p_op':float('Inf')}, p=2/3)
-        bound['Spec_L_{2,1} Bound (Bartlett et al. 2017)'] = beta * measure['Spectral norm'] * ratio / math.sqrt(n)
-
-        ratio = calc_measure(init_model, init_model, h_dist_op_norm,'norm', {'p':2, 'q':2, 'p_op':float('Inf')}, p=2)
-        bound['Spec_Fro Bound (Neyshabur et al. 2018)'] =  d * measure['Spectral norm'] * ratio / math.sqrt(n)
-
-        # Measures on the Gram matrix
-
-        measure['Gram Frobenious norm'] = norm_matrix(init_matrix, p = 'fro').item()
-        measure['Gram Frobenious norm over margin'] = measure['Frobenious norm'] / margin
-        measure['Gram Mean'] = mean_matrix(init_matrix).item()
-        measure['Gram Mean over margin'] = measure['Gram Mean'] / margin
-        measure['Gram Diagonal Sum'] = torch.sum(diagonal_matrix(init_matrix)).item()
-        measure['Gram Diagonal Sum over margin'] = measure['Gram Diagonal Sum'] / margin
-        measure['Gram Rank'] = rank_matrix(init_matrix).item()
-        measure['Gram LGA'] = matrix_lga(init_matrix, targets).item()
-        measure['Gram LGA over margin'] = measure['Gram LGA'] / margin
-
-    return measure, bound
 
 def get_measures(measure_dicts, measures):
     return [[measure_dict[measure] for measure_dict in measure_dicts] for measure in measures]
