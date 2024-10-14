@@ -104,14 +104,6 @@ python3 train.py --model fc --name simple_training --dataset MNIST --n-nn 4 --ep
 
 In the current version, plotting and evaluation of the measures are done in the same process. Next version will provide a separate file for pltotting and evaluation.
 
-## Extension
-
-The framework can be extended in different ways:
-
-### Models
-
-Refer to the `models/README.md`.
-
 ### Datasets
 
 Right now, covered datasets are `MNIST, CIFAR10, CIFAR100, SVHN` from the [`torchvision` datasets](https://pytorch.org/vision/0.12/datasets.html). There are other built-in datasets in `torchvision`, feel free to modify the function [`utils.load_data`]. You can also add custom datasets, as long as they inherit from [`torch.utils.data.Dataset`](https://pytorch.org/docs/1.11/data.html?highlight=torch%20utils%20data%20dataset#torch.utils.data.Dataset), which can be used in a [`DataLoader`](https://pytorch.org/docs/1.11/data.html?highlight=torch%20utils%20data%20dataset#torch.utils.data.DataLoader). Loading custom datasets requires an adaptation of `utils.load_data`.
